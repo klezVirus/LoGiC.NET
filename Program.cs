@@ -23,8 +23,11 @@ namespace LoGiC.NET
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Drag & drop your file : ");
-            string path = Console.ReadLine().Replace("\"", string.Empty);
+            if (args.Length < 2) {
+                Console.WriteLine("Usage: Logic.NET <input-file> <output-file>");
+                return;
+            }
+            string path = args[0];
 
             Console.WriteLine("Preparing obfuscation...");
             if (!File.Exists("config.txt"))
@@ -35,7 +38,6 @@ namespace LoGiC.NET
             Parser p = new Parser() { ConfigFile = "config.txt" };
             ForceWinForms = bool.Parse(p.Read("ForceWinFormsCompatibility").ReadResponse().ReplaceSpaces());
             DontRename = bool.Parse(p.Read("DontRename").ReadResponse().ReplaceSpaces());
-
             Randomizer.Initialize();
 
             obfuscation:
@@ -48,32 +50,63 @@ namespace LoGiC.NET
             Console.WriteLine("Adding proxy calls...");
             ProxyAdder.Execute();
 
-            Console.WriteLine("Encrypting strings...");
-            StringEncryption.Execute();
+            try
+            {
+                Console.WriteLine("Encrypting strings...");
+                StringEncryption.Execute();
+            }
+            catch { }
 
-            Console.WriteLine("Injecting Anti-Tamper...");
-            AntiTamper.Execute();
+            try
+            {
+                Console.WriteLine("Injecting Anti-Tamper...");
+                AntiTamper.Execute();
+            }
+            catch { }
 
-            Console.WriteLine("Adding junk methods...");
-            JunkMethods.Execute();
+            try
+            {
+                Console.WriteLine("Adding junk methods...");
+                JunkMethods.Execute();
+            }
+            catch { }
+            try
+            {
+                Console.WriteLine("Executing Anti-De4dot...");
+                AntiDe4dot.Execute();
+            }
+            catch { }
 
-            Console.WriteLine("Executing Anti-De4dot...");
-            AntiDe4dot.Execute();
+            try
+            {
+                Console.WriteLine("Executing Control Flow...");
+                ControlFlow.Execute();
+            }
+            catch { }
+            try
+            {
 
-            Console.WriteLine("Executing Control Flow...");
-            ControlFlow.Execute();
+                Console.WriteLine("Encoding ints...");
+                IntEncoding.Execute();
+            }
+            catch { }
+            try
+            {
 
-            Console.WriteLine("Encoding ints...");
-            IntEncoding.Execute();
+                Console.WriteLine("Adding invalid metadata...");
+                InvalidMetadata.Execute();
+            }
+            catch { }
+            try
+            {
+                Console.WriteLine("Watermarking...");
+                Watermark.AddAttribute();
+            }
+            catch { }
 
-            Console.WriteLine("Adding invalid metadata...");
-            InvalidMetadata.Execute();
+            FilePath = args[1];
+            Console.WriteLine("Saving file as {0}", FilePath);
 
-            Console.WriteLine("Watermarking...");
-            Watermark.AddAttribute();
-
-            Console.WriteLine("Saving file...");
-            FilePath = @"C:\Users\" + Environment.UserName + @"\Desktop\" + Path.GetFileNameWithoutExtension(path) + "_protected" + FileExtension;
             Module.Write(Stream, new dnlib.DotNet.Writer.ModuleWriterOptions(Module) { Logger = DummyLogger.NoThrowInstance });
 
             StripDOSHeader.Execute();
@@ -84,8 +117,7 @@ namespace LoGiC.NET
             if (AntiTamper.Tampered)
                 AntiTamper.Inject(FilePath);
 
-            Console.WriteLine("Done! Press any key to exit...");
-            Console.ReadKey();
+            Console.WriteLine("Done!");
         }
     }
 }
