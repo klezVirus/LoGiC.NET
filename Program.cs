@@ -4,6 +4,7 @@ using dnlib.DotNet;
 using LoGiC.NET.Protections;
 using SharpConfigParser;
 using LoGiC.NET.Utils;
+using dnlib.DotNet.Writer;
 
 namespace LoGiC.NET
 {
@@ -21,94 +22,76 @@ namespace LoGiC.NET
 
         public static MemoryStream Stream = new MemoryStream();
 
-        static void Main(string[] args)
+        static void Main(string[] _)
         {
-            if (args.Length < 2) {
-                Console.WriteLine("Usage: Logic.NET <input-file> <output-file>");
-                return;
-            }
-            string path = args[0];
+            Console.WriteLine("Drag & drop your file : ");
+            string path = Console.ReadLine().Replace("\"", string.Empty);
 
-            Console.WriteLine("Preparing obfuscation...");
+            Console.WriteLine("- Preparing obfuscation...");
             if (!File.Exists("config.txt"))
             {
                 Console.WriteLine("Config file not found, continuing without it.");
                 goto obfuscation;
             }
+
             Parser p = new Parser() { ConfigFile = "config.txt" };
-            ForceWinForms = bool.Parse(p.Read("ForceWinFormsCompatibility").ReadResponse().ReplaceSpaces());
-            DontRename = bool.Parse(p.Read("DontRename").ReadResponse().ReplaceSpaces());
-            Randomizer.Initialize();
+            try { ForceWinForms = bool.Parse(p.Read("ForceWinFormsCompatibility").ReadResponse().ReplaceSpaces()); } catch { }
+            try { DontRename = bool.Parse(p.Read("DontRename").ReadResponse().ReplaceSpaces()); } catch { }
+            try { ProxyAdder.Intensity = int.Parse(p.Read("ProxyCallsIntensity").ReadResponse().ReplaceSpaces()); } catch { }
+
+            Console.WriteLine("\n- ForceWinForms: " + ForceWinForms);
+            Console.WriteLine("- DontRename: " + DontRename);
+            Console.WriteLine("- ProxyCallsIntensity: " + ProxyAdder.Intensity + "\n");
 
             obfuscation:
             Module = ModuleDefMD.Load(path);
             FileExtension = Path.GetExtension(path);
 
-            Console.WriteLine("Renaming...");
-            Renamer.Execute();
+            Protection[] protections = new Protection[]
+            {
+                new Renamer(),
+                new AntiTamper(),
+                new JunkDefs(),
+                new StringEncryption(),
+                new AntiDe4dot(),
+                new ControlFlow(),
+                new IntEncoding(),
+                new ProxyAdder(),
+                new InvalidMetadata()
+            };
 
             Console.WriteLine("Adding proxy calls...");
             ProxyAdder.Execute();
 
-            try
-            {
-                Console.WriteLine("Encrypting strings...");
-                StringEncryption.Execute();
-            }
-            catch { }
+            Console.WriteLine("Encrypting strings...");
+            StringEncryption.Execute();
 
-            try
-            {
-                Console.WriteLine("Injecting Anti-Tamper...");
-                AntiTamper.Execute();
-            }
-            catch { }
+            Console.WriteLine("Injecting Anti-Tamper...");
+            AntiTamper.Execute();
 
-            try
-            {
-                Console.WriteLine("Adding junk methods...");
-                JunkMethods.Execute();
-            }
-            catch { }
-            try
-            {
-                Console.WriteLine("Executing Anti-De4dot...");
-                AntiDe4dot.Execute();
-            }
-            catch { }
+            Console.WriteLine("Adding junk methods...");
+            JunkMethods.Execute();
 
-            try
-            {
-                Console.WriteLine("Executing Control Flow...");
-                ControlFlow.Execute();
-            }
-            catch { }
-            try
-            {
+            Console.WriteLine("Executing Anti-De4dot...");
+            AntiDe4dot.Execute();
 
-                Console.WriteLine("Encoding ints...");
-                IntEncoding.Execute();
-            }
-            catch { }
-            try
-            {
+            Console.WriteLine("Executing Control Flow...");
+            ControlFlow.Execute();
 
-                Console.WriteLine("Adding invalid metadata...");
-                InvalidMetadata.Execute();
-            }
-            catch { }
-            try
-            {
-                Console.WriteLine("Watermarking...");
-                Watermark.AddAttribute();
-            }
-            catch { }
+            Console.WriteLine("Encoding ints...");
+            IntEncoding.Execute();
 
-            FilePath = args[1];
-            Console.WriteLine("Saving file as {0}", FilePath);
+            Console.WriteLine("Adding invalid metadata...");
+            InvalidMetadata.Execute();
 
+            Console.WriteLine("Watermarking...");
+            Watermark.AddAttribute();
+
+            Console.WriteLine("Saving file...");
+            FilePath = @"C:\Users\" + Environment.UserName + @"\Desktop\" + Path.GetFileNameWithoutExtension(path) + "_protected" + FileExtension;
             Module.Write(Stream, new dnlib.DotNet.Writer.ModuleWriterOptions(Module) { Logger = DummyLogger.NoThrowInstance });
 
+            Console.WriteLine("- Stripping DOS header...");
             StripDOSHeader.Execute();
 
             // Save stream to file
@@ -117,7 +100,8 @@ namespace LoGiC.NET
             if (AntiTamper.Tampered)
                 AntiTamper.Inject(FilePath);
 
-            Console.WriteLine("Done!");
+            Console.WriteLine("Done! Press any key to exit...");
+            Console.ReadKey();
         }
     }
 }

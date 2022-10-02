@@ -5,22 +5,27 @@ using LoGiC.NET.Utils.Analyzer;
 
 namespace LoGiC.NET.Protections
 {
-    public class Renamer : Randomizer
+    public class Renamer : Protection
     {
-        private static int MethodAmount { get; set; }
+        public Renamer()
+        {
+            Name = "Renamer";
+        }
 
-        private static int ParameterAmount { get; set; }
+        private int MethodAmount { get; set; }
 
-        private static int PropertyAmount { get; set; }
+        private int ParameterAmount { get; set; }
 
-        private static int FieldAmount { get; set; }
+        private int PropertyAmount { get; set; }
 
-        private static int EventAmount { get; set; }
+        private int FieldAmount { get; set; }
+
+        private int EventAmount { get; set; }
 
         /// <summary>
         /// Execution of the 'Renamer' method. It'll rename types, methods and their parameters, properties, fields and events to random strings. But before they get renamed, they get analyzed to see if they are good to be renamed. (That prevents the program being broken)
         /// </summary>
-        public static void Execute()
+        public override void Execute()
         {
             if (Program.DontRename)
                 return;
@@ -29,30 +34,30 @@ namespace LoGiC.NET.Protections
             Program.Module.EncId = Guid.NewGuid();
             Program.Module.EncBaseId = Guid.NewGuid();
 
-            Program.Module.Name = Generated;
-            Program.Module.EntryPoint.Name = Generated;
+            Program.Module.Name = Randomizer.String(MemberRenamer.StringLength());
+            Program.Module.EntryPoint.Name = Randomizer.String(MemberRenamer.StringLength());
 
             foreach (TypeDef type in Program.Module.Types)
             {
-                if (type.Namespace == Program.Module.EntryPoint.FullName.Split(' ')[1].Split('.')[0])
+                if (CanRename(type))
                 {
                     // Hide namespace
                     type.Namespace = string.Empty;
-                    type.Name = String(MemberRenamer.StringLength());
+                    type.Name = Randomizer.String(MemberRenamer.StringLength());
                 }
 
                 foreach (MethodDef m in type.Methods)
                 {
                     if (CanRename(m) && !Program.ForceWinForms && !Program.FileExtension.Contains("dll"))
                     {
-                        m.Name = Generated;
+                        m.Name = Randomizer.String(MemberRenamer.StringLength());
                         ++MethodAmount;
                     }
 
                     foreach (Parameter para in m.Parameters)
                         if (CanRename(para))
                         {
-                            para.Name = Generated;
+                            para.Name = Randomizer.String(MemberRenamer.StringLength());
                             ++ParameterAmount;
                         }
                 }
@@ -60,21 +65,21 @@ namespace LoGiC.NET.Protections
                 foreach (PropertyDef p in type.Properties)
                     if (CanRename(p))
                     {
-                        p.Name = Generated;
+                        p.Name = Randomizer.String(MemberRenamer.StringLength());
                         ++PropertyAmount;
                     }
 
                 foreach (FieldDef field in type.Fields)
                     if (CanRename(field))
                     {
-                        field.Name = String(MemberRenamer.StringLength());
+                        field.Name = Randomizer.String(MemberRenamer.StringLength());
                         ++FieldAmount;
                     }
 
                 foreach (EventDef e in type.Events)
                     if (CanRename(e))
                     {
-                        e.Name = Generated;
+                        e.Name = Randomizer.String(MemberRenamer.StringLength());
                         ++EventAmount;
                     }
             }
@@ -96,6 +101,7 @@ namespace LoGiC.NET.Protections
             else if (obj is EventDef) analyze = new EventDefAnalyzer();
             else if (obj is FieldDef) analyze = new FieldDefAnalyzer();
             else if (obj is Parameter) analyze = new ParameterAnalyzer();
+            else if (obj is TypeDef) analyze = new TypeDefAnalyzer();
             else return false;
             return analyze.Execute(obj);
         }

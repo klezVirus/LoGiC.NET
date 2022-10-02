@@ -8,24 +8,29 @@ using LoGiC.NET.Utils;
 
 namespace LoGiC.NET.Protections
 {
-    public class AntiTamper : Randomizer
+    public class AntiTamper : Protection
     {
+        public AntiTamper()
+        {
+            Name = "Anti-Tamper";
+        }
+
         // Thanks to the EOF Anti-Tamper project by Xenocode on GitHub!
 
         public static bool Tampered { get; set; }
 
         public static void Inject(string filePath)
         {
-            byte[] bytes;
-
             using (MD5 hash = MD5.Create())
-                bytes = hash.ComputeHash(File.ReadAllBytes(filePath));
+            {
+                byte[] bytes = hash.ComputeHash(File.ReadAllBytes(filePath));
 
-            using (FileStream fs = new FileStream(filePath, FileMode.Append))
-                fs.Write(bytes, 0, bytes.Length);
+                using (FileStream fs = new FileStream(filePath, FileMode.Append))
+                    fs.Write(bytes, 0, bytes.Length);
+            }
         }
 
-        public static void Execute()
+        public override void Execute()
         {
             ModuleDefMD typeModule = ModuleDefMD.Load(typeof(TamperClass).Module);
             TypeDef typeDef = typeModule.ResolveTypeDef(MDToken.ToRID(typeof(TamperClass).MetadataToken));

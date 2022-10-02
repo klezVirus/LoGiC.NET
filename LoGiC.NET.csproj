@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,6 +33,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>LoGiC.NET.Program</StartupObject>
@@ -56,8 +58,8 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="dnlib, Version=3.3.2.0, Culture=neutral, PublicKeyToken=50e96378b6e77999, processorArchitecture=MSIL">
-      <HintPath>packages\dnlib.3.3.2\lib\net45\dnlib.dll</HintPath>
+    <Reference Include="dnlib, Version=3.3.3.0, Culture=neutral, PublicKeyToken=50e96378b6e77999, processorArchitecture=MSIL">
+      <HintPath>packages\dnlib.3.3.3\lib\net45\dnlib.dll</HintPath>
     </Reference>
     <Reference Include="SharpConfigParser">
       <HintPath>.\SharpConfigParser.dll</HintPath>
@@ -81,7 +83,8 @@
     <Compile Include="Protections\ControlFlow.cs" />
     <Compile Include="Protections\IntEncoding.cs" />
     <Compile Include="Protections\InvalidMetadata.cs" />
-    <Compile Include="Protections\JunkMethods.cs" />
+    <Compile Include="Protections\JunkDefs.cs" />
+    <Compile Include="Protections\Protection.cs" />
     <Compile Include="Protections\ProxyAdder.cs" />
     <Compile Include="Protections\Renamer.cs" />
     <Compile Include="Protections\StringEncryption.cs" />
@@ -92,7 +95,7 @@
     <Compile Include="Utils\Analyzer\MethodDefAnalyzer.cs" />
     <Compile Include="Utils\Analyzer\ParameterAnalyzer.cs" />
     <Compile Include="Utils\Analyzer\PropertyDefAnalyzer.cs" />
-    <Compile Include="Utils\Decap.cs" />
+    <Compile Include="Utils\Analyzer\TypeDefAnalyzer.cs" />
     <Compile Include="Utils\InjectContext.cs" />
     <Compile Include="Utils\InjectHelper.cs" />
     <Compile Include="Utils\ProxyExtension.cs" />

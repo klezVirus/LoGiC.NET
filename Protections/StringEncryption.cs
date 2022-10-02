@@ -8,11 +8,16 @@ using LoGiC.NET.Utils;
 
 namespace LoGiC.NET.Protections
 {
-    public class StringEncryption : Randomizer
+    public class StringEncryption : Protection
     {
-        private static int Amount { get; set; }
+        public StringEncryption()
+        {
+            Name = "String Encryption";
+        }
 
-        public static void Execute()
+        private int Amount { get; set; }
+
+        public override void Execute()
         {
             ModuleDefMD typeModule = ModuleDefMD.Load(typeof(StringDecoder).Module);
             TypeDef typeDef = typeModule.ResolveTypeDef(MDToken.ToRID(typeof(StringDecoder).MetadataToken));
@@ -28,10 +33,6 @@ namespace LoGiC.NET.Protections
                 }
 
             foreach (TypeDef type in Program.Module.Types)
-            {
-                if (type.IsGlobalModuleType)
-                    continue;
-
                 foreach (MethodDef method in type.Methods)
                 {
                     if (!method.HasBody)
@@ -40,17 +41,20 @@ namespace LoGiC.NET.Protections
                     method.Body.SimplifyBranches();
 
                     for (int i = 0; i < method.Body.Instructions.Count; i++)
-                        if (method.Body.Instructions[i].OpCode == OpCodes.Ldstr)
+                        if (method.Body.Instructions[i] != null && method.Body.Instructions[i].OpCode == OpCodes.Ldstr)
                         {
-                            int key = Next();
-                            string operand = method.Body.Instructions[i].Operand.ToString();
+                            int key = Randomizer.Next();
+                            object op = method.Body.Instructions[i].Operand;
 
-                            method.Body.Instructions[i].Operand = Encrypt(operand, key);
-                            method.Body.Instructions.Insert(i + 1, OpCodes.Ldc_I4.ToInstruction(Next()));
+                            if (op == null)
+                                continue;
+
+                            method.Body.Instructions[i].Operand = Encrypt(op.ToString(), key);
+                            method.Body.Instructions.Insert(i + 1, OpCodes.Ldc_I4.ToInstruction(Randomizer.Next()));
                             method.Body.Instructions.Insert(i + 2, OpCodes.Ldc_I4.ToInstruction(key));
-                            method.Body.Instructions.Insert(i + 3, OpCodes.Ldc_I4.ToInstruction(Next()));
-                            method.Body.Instructions.Insert(i + 4, OpCodes.Ldc_I4.ToInstruction(Next()));
-                            method.Body.Instructions.Insert(i + 5, OpCodes.Ldc_I4.ToInstruction(Next()));
+                            method.Body.Instructions.Insert(i + 3, OpCodes.Ldc_I4.ToInstruction(Randomizer.Next()));
+                            method.Body.Instructions.Insert(i + 4, OpCodes.Ldc_I4.ToInstruction(Randomizer.Next()));
+                            method.Body.Instructions.Insert(i + 5, OpCodes.Ldc_I4.ToInstruction(Randomizer.Next()));
                             method.Body.Instructions.Insert(i + 6, OpCodes.Call.ToInstruction(init));
                             
                             ++Amount;
@@ -58,12 +62,11 @@ namespace LoGiC.NET.Protections
 
                     method.Body.OptimizeBranches();
                 }
-            }
 
             Console.WriteLine($"  Encrypted {Amount} strings.");
         }
 
-        private static string Encrypt(string str, int key)
+        private string Encrypt(string str, int key)
         {
             //str = Convert.ToBase64String(Encoding.UTF32.GetBytes(str));
             /*I'm using UTF32, but you can
