@@ -22,10 +22,13 @@ namespace LoGiC.NET
 
         public static MemoryStream Stream = new MemoryStream();
 
-        static void Main(string[] _)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Drag & drop your file : ");
-            string path = Console.ReadLine().Replace("\"", string.Empty);
+            if(args.Length < 1) { 
+                Console.WriteLine($"Usage: LoGiC.NET <input-file-path>");
+                return;
+            }
+            string path = args[1];
 
             Console.WriteLine("- Preparing obfuscation...");
             if (!File.Exists("config.txt"))
@@ -60,36 +63,18 @@ namespace LoGiC.NET
                 new InvalidMetadata()
             };
 
-            Console.WriteLine("Adding proxy calls...");
-            ProxyAdder.Execute();
+            foreach (Protection protection in protections)
+            {
+                Console.WriteLine("- Executing protection: " + protection.Name);
+                protection.Execute();
+            }
 
-            Console.WriteLine("Encrypting strings...");
-            StringEncryption.Execute();
-
-            Console.WriteLine("Injecting Anti-Tamper...");
-            AntiTamper.Execute();
-
-            Console.WriteLine("Adding junk methods...");
-            JunkMethods.Execute();
-
-            Console.WriteLine("Executing Anti-De4dot...");
-            AntiDe4dot.Execute();
-
-            Console.WriteLine("Executing Control Flow...");
-            ControlFlow.Execute();
-
-            Console.WriteLine("Encoding ints...");
-            IntEncoding.Execute();
-
-            Console.WriteLine("Adding invalid metadata...");
-            InvalidMetadata.Execute();
-
-            Console.WriteLine("Watermarking...");
+            Console.WriteLine("- Watermarking...");
             Watermark.AddAttribute();
 
-            Console.WriteLine("Saving file...");
-            FilePath = @"C:\Users\" + Environment.UserName + @"\Desktop\" + Path.GetFileNameWithoutExtension(path) + "_protected" + FileExtension;
-            Module.Write(Stream, new dnlib.DotNet.Writer.ModuleWriterOptions(Module) { Logger = DummyLogger.NoThrowInstance });
+            Console.WriteLine("- Saving file...");
+            FilePath = path + ".obfuscated";
+            Module.Write(Stream, new ModuleWriterOptions(Module) { Logger = DummyLogger.NoThrowInstance });
 
             Console.WriteLine("- Stripping DOS header...");
             StripDOSHeader.Execute();
@@ -100,8 +85,7 @@ namespace LoGiC.NET
             if (AntiTamper.Tampered)
                 AntiTamper.Inject(FilePath);
 
-            Console.WriteLine("Done! Press any key to exit...");
-            Console.ReadKey();
+            Console.WriteLine("- Done!");
         }
     }
 }
