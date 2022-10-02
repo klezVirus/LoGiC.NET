@@ -28,9 +28,14 @@ namespace LoGiC.NET
                 Console.WriteLine($"Usage: LoGiC.NET <input-file-path>");
                 return;
             }
-            string path = args[1];
+            string path = args[0];
 
-            Console.WriteLine("- Preparing obfuscation...");
+            if (!File.Exists(path)) {
+                Console.WriteLine("- File `{0}` not found...", path);
+                return;
+            }
+
+            Console.WriteLine("- Preparing obfuscation against `{0}`...", path);
             if (!File.Exists("config.txt"))
             {
                 Console.WriteLine("Config file not found, continuing without it.");
