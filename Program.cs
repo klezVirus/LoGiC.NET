@@ -35,14 +35,16 @@ namespace LoGiC.NET
                 return;
             }
 
+            string config_file = Path.GetFullPath(args[1]);
+
             Console.WriteLine("- Preparing obfuscation against `{0}`...", path);
-            if (!File.Exists("config.txt"))
+            if (!File.Exists(config_file))
             {
                 Console.WriteLine("Config file not found, continuing without it.");
                 goto obfuscation;
             }
 
-            Parser p = new Parser() { ConfigFile = "config.txt" };
+            Parser p = new Parser() { ConfigFile = config_file };
             try { ForceWinForms = bool.Parse(p.Read("ForceWinFormsCompatibility").ReadResponse().ReplaceSpaces()); } catch { }
             try { DontRename = bool.Parse(p.Read("DontRename").ReadResponse().ReplaceSpaces()); } catch { }
             try { ProxyAdder.Intensity = int.Parse(p.Read("ProxyCallsIntensity").ReadResponse().ReplaceSpaces()); } catch { }
